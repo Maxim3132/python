@@ -49,135 +49,324 @@ user_states = {}  # {user_id: {'state': 'waiting_amount', 'payment_method': 'sbe
 pending_withdrawals = []  # Список словарей: [{'id': 1, 'user_id': 123, 'amount': 100, 'photo': 'file_id', 'amount_with_fee':130}, ...]
 withdrawal_id_counter = 1
 
+# --- Промокоды ---
+promocodes = {}
+user_balances = {}
+user_next_deposit_bonus = {}
+
 # --- Функции для работы с депозитами ---
 def create_deposit(user_id, amount, photo, payment_method):
-    """Создает новую заявку на пополнение и возвращает ее ID."""
-    try:
-        global deposit_id_counter
-        deposit = {
-            'id': deposit_id_counter,
-            'user_id': user_id,
-            'amount': amount,
-            'photo': photo,
-            'payment_method': payment_method
-        }
-        pending_deposits.append(deposit)
-        deposit_id_counter += 1
-        logging.info(f"Создана заявка на депозит #{deposit_id_counter - 1} для пользователя {user_id}")
-        return deposit['id']
-    except Exception as e:
-        logging.error(f"Ошибка при создании депозита для пользователя {user_id}: {e}")
-        return None
+    global deposit_id_counter
+    deposit = {'id': deposit_id_counter, 'user_id': user_id, 'amount': amount, 'photo': photo, 'payment_method': payment_method}
+    pending_deposits.append(deposit)
+    deposit_id_counter += 1
+    logging.info(f"Создана заявка на депозит #{deposit_id_counter - 1} для пользователя {user_id}")
+    return deposit['id']
 
 def get_deposit(deposit_id):
-    """Получает заявку на пополнение по ID."""
-    try:
-        for deposit in pending_deposits:
-            if deposit['id'] == deposit_id:
-                return deposit
-        logging.warning(f"Депозит с ID {deposit_id} не найден")
-        return None
-    except Exception as e:
-        logging.error(f"Ошибка при получении депозита с ID {deposit_id}: {e}")
-        return None
+    for deposit in pending_deposits:
+        if deposit['id'] == deposit_id:
+            return deposit
+    logging.warning(f"Депозит с ID {deposit_id} не найден")
+    return None
 
 def remove_deposit(deposit_id):
-    """Удаляет заявку на пополнение по ID."""
-    try:
-        global pending_deposits
-        pending_deposits = [deposit for deposit in pending_deposits if deposit['id'] != deposit_id]
-        logging.info(f"Депозит с ID {deposit_id} удален")
-    except Exception as e:
-        logging.error(f"Ошибка при удалении депозита с ID {deposit_id}: {e}")
+    global pending_deposits
+    pending_deposits = [deposit for deposit in pending_deposits if deposit['id'] != deposit_id]
+    logging.info(f"Депозит с ID {deposit_id} удален")
 
 def has_pending_deposit(user_id):
-    """Проверяет, есть ли у пользователя неподтвержденная заявка."""
-    try:
-        for deposit in pending_deposits:
-            if deposit['user_id'] == user_id:
-                logging.info(f"У пользователя {user_id} есть ожидающая заявка на депозит")
-                return True
-        logging.info(f"У пользователя {user_id} нет ожидающих заявок на депозит")
-        return False
-    except Exception as e:
-        logging.error(f"Ошибка при проверке ожидающих депозитов для пользователя {user_id}: {e}")
-        return False
+    for deposit in pending_deposits:
+        if deposit['user_id'] == user_id:
+            logging.info(f"У пользователя {user_id} есть ожидающая заявка на депозит")
+            return True
+    logging.info(f"У пользователя {user_id} нет ожидающих заявок на депозит")
+    return False
 
 # --- Функции для работы с выводами ---
 def create_withdrawal(user_id, amount, photo, amount_with_fee):
-    """Создает новую заявку на вывод и возвращает ее ID."""
-    try:
-        global withdrawal_id_counter
-        withdrawal = {
-            'id': withdrawal_id_counter,
-            'user_id': user_id,
-            'amount': amount,
-            'photo': photo,
-            'amount_with_fee': amount_with_fee
-        }
-        pending_withdrawals.append(withdrawal)
-        withdrawal_id_counter += 1
-        logging.info(f"Создана заявка на вывод #{withdrawal_id_counter - 1} для пользователя {user_id}")
-        return withdrawal['id']
-    except Exception as e:
-        logging.error(f"Ошибка при создании вывода для пользователя {user_id}: {e}")
-        return None
+    global withdrawal_id_counter
+    withdrawal = {'id': withdrawal_id_counter, 'user_id': user_id, 'amount': amount, 'photo': photo, 'amount_with_fee': amount_with_fee}
+    pending_withdrawals.append(withdrawal)
+    withdrawal_id_counter += 1
+    logging.info(f"Создана заявка на вывод #{withdrawal_id_counter - 1} для пользователя {user_id}")
+    return withdrawal['id']
 
 def get_withdrawal(withdrawal_id):
-    """Получает заявку на вывод по ID."""
-    try:
-        for withdrawal in pending_withdrawals:
-            if withdrawal['id'] == withdrawal_id:
-                return withdrawal
-        logging.warning(f"Вывод с ID {withdrawal_id} не найден")
-        return None
-    except Exception as e:
-        logging.error(f"Ошибка при получении вывода с ID {withdrawal_id}: {e}")
-        return None
+    for withdrawal in pending_withdrawals:
+        if withdrawal['id'] == withdrawal_id:
+            return withdrawal
+    logging.warning(f"Вывод с ID {withdrawal_id} не найден")
+    return None
 
 def remove_withdrawal(withdrawal_id):
-    """Удаляет заявку на вывод по ID."""
-    try:
-        global pending_withdrawals
-        pending_withdrawals = [withdrawal for withdrawal in pending_withdrawals if withdrawal['id'] != withdrawal_id]
-        logging.info(f"Вывод с ID {withdrawal_id} удален")
-    except Exception as e:
-        logging.error(f"Ошибка при удалении вывода с ID {withdrawal_id}: {e}")
+    global pending_withdrawals
+    pending_withdrawals = [withdrawal for withdrawal in pending_withdrawals if withdrawal['id'] != withdrawal_id]
+    logging.info(f"Вывод с ID {withdrawal_id} удален")
 
 # --- Функции-обработчики ---
-
 def get_user_data(user_id):
-    """Получает данные пользователя.  Если пользователь не существует, создает новую запись."""
-    try:
-        if user_data.get(user_id) is None:
-            user_data[user_id] = {
-                'balance': 0,
-                'name': 'Не указано',
-                'city': 'Не указано',
-                'deposit_count': 0,
-                'withdraw_count': 0,
-            }
-            logging.info(f"Создан новый пользователь с ID: {user_id}")
-        return user_data[user_id]
-    except Exception as e:
-        logging.error(f"Ошибка при получении данных пользователя {user_id}: {e}")
-        return None
+    if user_data.get(user_id) is None:
+        user_data[user_id] = {'balance': 0, 'name': 'Не указано', 'city': 'Не указано', 'deposit_count': 0, 'withdraw_count': 0}
+        logging.info(f"Создан новый пользователь с ID: {user_id}")
+    return user_data[user_id]
 
 def save_user_data(user_id, data):
-    """Сохраняет данные пользователя."""
-    try:
-        user_data[user_id] = data
-        logging.debug(f"Данные пользователя {user_id} обновлены: {data}")
-    except Exception as e:
-        logging.error(f"Ошибка при сохранении данных пользователя {user_id}: {e}")
+    user_data[user_id] = data
+    logging.debug(f"Данные пользователя {user_id} обновлены: {data}")
 
 def is_admin(user_id):
-    """Проверяет, является ли пользователь администратором."""
     return user_id in ADMIN_IDS
+
+# --- Функции для работы с промокодами ---
+def ask_promocode(call):
+    """Запрашивает у пользователя промокод."""
+    try:
+        user_id = call.from_user.id
+        bot.send_message(user_id, "Введите промокод:")
+        bot.register_next_step_handler(call.message, activate_promocode)
+        logging.info(f"Пользователь {user_id} начал процесс активации промокода")
+    except Exception as e:
+        logging.error(f"Ошибка в ask_promocode: {e}\n{traceback.format_exc()}")
+
+def activate_promocode(message):
+    """Активирует промокод, введенный пользователем."""
+    try:
+        user_id = message.from_user.id
+        promocode = message.text.upper()
+        logging.info(f"Попытка активации промокода: {promocode} пользователем {user_id}")
+
+        if promocode in promocodes:
+            logging.info(f"Промокод {promocode} найден")
+            if user_id in promocodes[promocode]["users"]:
+                logging.info(f"Пользователь {user_id} уже активировал промокод {promocode}")
+                bot.send_message(message.chat.id, "Вы уже активировали этот промокод!")
+                return
+
+            if promocodes[promocode]["used"] < promocodes[promocode]["limit"]:
+                logging.info(f"Промокод {promocode} можно активировать. Осталось {promocodes[promocode]['limit'] - promocodes[promocode]['used']} активаций.")
+                # Активация промокода
+                promocode_data = promocodes[promocode]
+                if promocode_data['type'] == "fixed":
+                    logging.info(f"Тип промокода: фиксированная сумма")
+                    # Начисление баланса
+                    if user_id not in user_balances:
+                        user_balances[user_id] = 0
+
+                    #Обновляем user_balances
+                    user_balances[user_id] += promocode_data["value"]
+                    logging.info(f"Баланс пользователя {user_id} (user_balances) увеличен на {promocode_data['value']}. Новый баланс: {user_balances[user_id]}")
+
+                    #Обновляем user_data
+                    user_info = get_user_data(user_id)
+                    user_info['balance'] = user_balances[user_id]  # Синхронизация балансов
+                    save_user_data(user_id, user_info)
+                    logging.info(f"Баланс пользователя {user_id} (user_data) синхронизирован. Новый баланс: {user_info['balance']}")
+
+                    bot.send_message(message.chat.id,
+                                     f"Промокод активирован! На ваш баланс добавлено {promocode_data['value']} голды!")
+                elif promocode_data['type'] == "percentage":
+                    logging.info(f"Тип промокода: процент")
+                    # Запоминаем бонус к следующему пополнению.
+                    user_next_deposit_bonus[user_id] = promocode_data["value"]
+                    logging.info(f"Пользователю {user_id} установлен бонус на следующий депозит: {promocode_data['value']}%")
+                    bot.send_message(message.chat.id,
+                                     f"Промокод активирован! Вы получите +{promocode_data['value']}% к следующему пополнению!")
+                else:
+                    bot.send_message(message.chat.id, "Ошибка: Неизвестный тип промокода.")
+                    return
+
+                promocodes[promocode]['used'] += 1
+                promocodes[promocode]['users'].append(user_id)
+                logging.info(f"Промокод {promocode} активирован пользователем {user_id}. Использовано: {promocodes[promocode]['used']}")
+                bot.send_message(message.chat.id, f"Промокод {promocode} активирован!")
+            else:
+                bot.send_message(message.chat.id, "Промокод больше не действителен (достигнут лимит активаций).")
+        else:
+            bot.send_message(message.chat.id, "Неверный промокод.")
+    
+
+    except Exception as e:
+        logging.error(f"Ошибка в activate_promocode: {e}\n{traceback.format_exc()}")
+def show_promocode_info(call, promocode_name):
+    """Отображает информацию о промокоде."""
+    try:
+        user_id = call.from_user.id
+        logging.info(f"show_promocode_info: promocode_name = {promocode_name}")
+        logging.info(f"Запрошена информация о промокоде {promocode_name} администратором {user_id}")
+        if promocode_name in promocodes:
+            data = promocodes[promocode_name]
+            text = f"Название: {promocode_name}\n"
+            text += f"Вид промокода: {data['type']}\n"
+            text += f"Активировали: {data['used']}\n"
+            text += f"Осталось активаций: {data['limit'] - data['used']}\n"
+            text += f"Награда: {data['value']}\n"
+
+            bot.send_message(user_id, text)
+            logging.info(f"Информация о промокоде {promocode_name} отправлена администратору {user_id}")
+        else:
+            bot.send_message(user_id, "Промокод не найден.")
+            logging.warning(f"Администратор {user_id} запросил информацию о несуществующем промокоде: {promocode_name}")
+
+    except Exception as e:
+        logging.error(f"Ошибка в show_promocode_info: {e}\n{traceback.format_exc()}")
+
+def create_promocode(call):
+    """Начинает процесс создания промокода (только для администраторов)."""
+    try:
+        user_id = call.from_user.id
+        if not is_admin(user_id):
+            bot.answer_callback_query(call.id, "У вас нет прав для выполнения этой команды.")
+            return
+
+        user_states[user_id] = {}  # Создаем стейт
+        markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+        btn_fixed = types.KeyboardButton("Фиксированная сумма")
+        btn_percentage = types.KeyboardButton("Процент")
+        markup.add(btn_fixed, btn_percentage)
+        bot.send_message(call.message.chat.id, "Выберите тип промокода:", reply_markup=markup)
+        bot.register_next_step_handler(call.message, promocode_type_selection)
+        logging.info(f"Администратор {user_id} начал процесс создания промокода")
+
+    except Exception as e:
+        logging.error(f"Ошибка в create_promocode: {e}\n{traceback.format_exc()}")
+
+def promocode_type_selection(message):
+    """Обработчик выбора типа промокода (фиксированная сумма или процент)."""
+    try:
+        user_id = message.from_user.id
+        if message.text == "Фиксированная сумма":
+            user_states[user_id]["type"] = "fixed"
+        elif message.text == "Процент":
+            user_states[user_id]["type"] = "percentage"
+        else:
+            bot.reply_to(message, "Неверный тип промокода. Повторите выбор.")
+            return
+        # Спрашиваем имя промокода.
+        bot.send_message(message.chat.id, "Введите имя промокода (например, NEWYEAR2024):",
+                         reply_markup=types.ReplyKeyboardRemove())
+        bot.register_next_step_handler(message, promocode_name_input)
+        logging.info(f"Администратор {user_id} выбрал тип промокода: {message.text}")
+
+    except Exception as e:
+        logging.error(f"Ошибка в promocode_type_selection: {e}\n{traceback.format_exc()}")
+
+def promocode_name_input(message):
+    """Обработчик ввода имени промокода."""
+    try:
+        user_id = message.from_user.id
+        user_states[user_id]["name"] = message.text.upper()
+        bot.send_message(message.chat.id, "Введите лимит активаций:")
+        bot.register_next_step_handler(message, promocode_limit_input)
+        logging.info(f"Администратор {user_id} ввел имя промокода: {message.text}")
+
+    except Exception as e:
+        logging.error(f"Ошибка в promocode_name_input: {e}\n{traceback.format_exc()}")
+
+def promocode_limit_input(message):
+    """Обработчик ввода лимита активаций промокода."""
+    try:
+        user_id = message.from_user.id
+        try:
+            user_states[user_id]["limit"] = int(message.text)
+        except ValueError:
+            bot.reply_to(message, "Неверный формат числа. Введите целое число:")
+            return
+        bot.send_message(message.chat.id, "Введите сумму (например, 100) или процент (например, 5):")
+        bot.register_next_step_handler(message, promocode_value_input)
+        logging.info(f"Администратор {user_id} ввел лимит активаций: {message.text}")
+
+    except Exception as e:
+        logging.error(f"Ошибка в promocode_limit_input: {e}\n{traceback.format_exc()}")
+
+def promocode_value_input(message):
+    """Обработчик ввода суммы или процента для промокода."""
+    try:
+        user_id = message.from_user.id
+        try:
+            user_states[user_id]["value"] = float(message.text)
+        except ValueError:
+            bot.reply_to(message, "Неверный формат числа. Введите число:")
+            return
+
+        # Подтверждение
+        name = user_states[user_id]["name"]
+        type = user_states[user_id]["type"]
+        value = user_states[user_id]["value"]
+        limit = user_states[user_id]["limit"]
+        bot.send_message(message.chat.id,
+                         f"Подтвердите данные:\nИмя: {name}\nТип: {type}\nЗначение: {value}\nЛимит: {limit}\nВсе верно? (да/нет)")
+        bot.register_next_step_handler(message, promocode_confirmation)
+        logging.info(f"Администратор {user_id} ввел значение промокода: {message.text}")
+
+    except Exception as e:
+        logging.error(f"Ошибка в promocode_value_input: {e}\n{traceback.format_exc()}")
+
+        # Подтверждение
+        name = user_states[user_id]["name"]
+        type = user_states[user_id]["type"]
+        value = user_states[user_id]["value"]
+        limit = user_states[user_id]["limit"]
+        bot.send_message(message.chat.id,
+                         f"Подтвердите данные:\nИмя: {name}\nТип: {type}\nЗначение: {value}\nЛимит: {limit}\nВсе верно? (да/нет)")
+        bot.register_next_step_handler(message, promocode_confirmation)
+        logging.info(f"Администратор {user_id} ввел значение промокода: {message.text}")
+
+    except Exception as e:
+        logging.error(f"Ошибка в promocode_value_input: {e}\n{traceback.format_exc()}")
+
+def promocode_confirmation(message):
+    """Обработчик подтверждения создания промокода."""
+    try:
+        user_id = message.from_user.id
+        if message.text.lower() == "да":
+            # Сохраняем промокод
+            name = user_states[user_id]["name"]
+            type = user_states[user_id]["type"]
+            value = user_states[user_id]["value"]
+            limit = user_states[user_id]["limit"]
+            promocodes[name] = {
+                "type": type,
+                "value": value,
+                "limit": limit,
+                "used": 0,
+                "users": []
+            }
+            bot.send_message(message.chat.id, f"Промокод {name} успешно создан!")
+        else:
+            bot.send_message(message.chat.id, "Создание промокода отменено.")
+
+        del user_states[user_id]  # Удаляем стейт.
+        logging.info(f"Администратор {user_id} подтвердил создание промокода")
+
+    except Exception as e:
+        logging.error(f"Ошибка в promocode_confirmation: {e}\n{traceback.format_exc()}")
+
+def show_admin_promocodes_menu(message, user_id):
+    """Отображает админское меню для промокодов."""
+    try:
+        markup = types.InlineKeyboardMarkup()
+
+        # Кнопка "Создать промокод"
+        btn_create = types.InlineKeyboardButton("Создать промокод", callback_data="admin_create_promocode")
+        markup.add(btn_create)
+
+        if promocodes:  # Проверяем, что словарь promocodes не пуст
+            for name in promocodes:
+                btn_promocode = types.InlineKeyboardButton(name, callback_data=f"admin_promocode_info_{name}")
+                markup.add(btn_promocode)
+
+        bot.send_message(message.chat.id, "Управление промокодами:", reply_markup=markup)
+        logging.info(f"Администратор {user_id} запросил меню управления промокодами")
+
+
+    except Exception as e:
+        logging.error(f"Ошибка в show_admin_promocodes_menu: {e}\n{traceback.format_exc()}")
+
+# --- Хендлеры ---
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    """Обработчик команды /start."""
     try:
         user_id = message.from_user.id
         user = message.from_user
@@ -345,26 +534,49 @@ def admin_callback_handler(call):
             # TODO: Реализовать логику рассылки сообщений
             bot.send_message(user_id, "Здесь будет функционал рассылки сообщений.")
             logging.info(f"Администратор {user_id} запросил функционал рассылки")
+
         elif call.data == "admin_promocodes":
-            # TODO: Реализовать логику управления промокодами
-            bot.send_message(user_id, "Здесь будет функционал управления промокодами.")
-            logging.info(f"Администратор {user_id} запросил функционал управления промокодами")
+            user_id = call.from_user.id  # Получаем ID пользователя из callback query
+            logging.info(f"admin_promocodes: User ID = {user_id}, is_admin = {is_admin(user_id)}")
+            logging.info(f"admin_promocodes: promocodes = {promocodes}")
+            if not is_admin(user_id):  # Исправлено: Проверяем, что пользователь *НЕ* админ
+                bot.answer_callback_query(call.id, "У вас нет прав для доступа к этой функции.")
+                logging.warning(f"Пользователь {user_id} попытался получить доступ к меню промокодов без прав")
+                return
+            else:
+                # Если админ, показываем меню промокодов
+                show_admin_promocodes_menu(call.message, user_id)
+                logging.info(f"Администратор {user_id} запросил меню управления промокодами")
+
         elif call.data == "admin_links":
             # TODO: Реализовать логику управления ссылками
             bot.send_message(user_id, "Здесь будет функционал управления ссылками.")
             logging.info(f"Администратор {user_id} запросил функционал управления ссылками")
+
         elif call.data == "admin_ref_system":
             # TODO: Реализовать логику управления реферальной системой
             bot.send_message(user_id, "Здесь будет функционал управления реферальной системой.")
             logging.info(f"Администратор {user_id} запросил функционал управления реферальной системой")
+
         elif call.data == "admin_questions":
             # TODO: Реализовать логику просмотра вопросов
             bot.send_message(user_id, "Здесь будет список вопросов.")
             logging.info(f"Администратор {user_id} запросил список вопросов")
+
         elif call.data == "admin_settings":
             # TODO: Реализовать логику изменения настроек
             bot.send_message(user_id, "Здесь будет функционал изменения настроек.")
-            logging.info(f"Администратор {user_id} запросил функционал изменения настроек")
+            logging.info(f"Администратор {user_id} запросил функционал управления ссылками")
+
+        elif call.data.startswith("admin_promocode_info_"):
+            promocode_name = call.data[20:]  # Извлекаем имя промокода
+            logging.info(f"admin_callback_handler: promocode_name = {promocode_name}, call.data = {call.data}")
+            logging.info(f"admin_callback_handler: promocodes = {promocodes}") #  ***НОВЫЙ ЛОГ***
+            show_promocode_info(call, promocode_name)
+
+        elif call.data == "admin_create_promocode":
+             create_promocode(call)
+
         else:
             bot.answer_callback_query(call.id, "Неизвестная команда")
             logging.warning(f"Администратор {user_id} выполнил неизвестную админ-команду: {call.data}")
@@ -402,6 +614,16 @@ def handle_deposit_approval(call):
              user_info['balance'] += gold_amount # Начисляем голду, а не рубли
              user_info['deposit_count'] += 1
              save_user_data(deposit['user_id'], user_info)
+
+              # Проверяем, есть ли у пользователя бонус к следующему пополнению
+             if deposit['user_id'] in user_next_deposit_bonus:
+                bonus_percentage = user_next_deposit_bonus[deposit['user_id']]
+                bonus_amount = gold_amount * (bonus_percentage / 100)
+                user_info['balance'] += bonus_amount
+                save_user_data(deposit['user_id'], user_info)
+                bot.send_message(deposit['user_id'], f"Вам зачислен бонус {bonus_amount} голды по промокоду!")
+                del user_next_deposit_bonus[deposit['user_id']]  # Удаляем бонус после использования
+
              remove_deposit(deposit_id)
 
              bot.send_message(deposit['user_id'], f"Ваша заявка на пополнение одобрена! На ваш баланс зачислено {gold_amount} голды.")
@@ -482,6 +704,29 @@ def process_decline_withdrawal_reason(message, withdrawal_id):
     except Exception as e:
         logging.error(f"Ошибка в process_decline_withdrawal_reason: {e}\n{traceback.format_exc()}")
 
+def process_decline_reason(message, deposit_id):
+    """Обрабатывает причину отклонения заявки и уведомляет пользователя."""
+    try:
+        user_id = message.from_user.id
+        if not is_admin(user_id):
+            bot.send_message(user_id, "У вас нет прав для доступа к этой функции.")
+            return
+
+        reason = message.text
+        deposit = get_deposit(deposit_id)
+        if not deposit:
+            bot.send_message(user_id, "Заявка не найдена.")
+            return
+
+        remove_deposit(deposit_id)
+
+        bot.send_message(deposit['user_id'], f"Ваша заявка на пополнение была отклонена, причина: {reason}.")
+        bot.send_message(user_id, f"Заявка {deposit_id} отклонена. Пользователь {deposit['user_id']} уведомлен. Причина: {reason}")
+        logging.info(f"Администратор {user_id} отклонил заявку {deposit_id} для пользователя {deposit['user_id']}. Причина: {reason}")
+
+    except Exception as e:
+        logging.error(f"Ошибка в process_decline_reason: {e}\n{traceback.format_exc()}")
+
 @bot.message_handler(func=lambda message: message.text == 'Пополнить')
 def deposit_menu(message):
     """Обработчик кнопки 'Пополнить'."""
@@ -541,11 +786,22 @@ def process_deposit_amount(message, method_code):
             # Рассчитываем количество голды
             gold_amount = int(amount / GOLD_RATE) # GOLD_RATE - ваш курс голды
 
+            # Проверяем, есть ли у пользователя бонус к пополнению
+            bonus_percentage = 0  # Бонус по умолчанию
+            if user_id in user_next_deposit_bonus:
+                bonus_percentage = user_next_deposit_bonus[user_id]
+                bonus_amount = gold_amount * (bonus_percentage / 100)
+                gold_amount += bonus_amount  # Применяем бонус
+                logging.info(f"Пользователю {user_id} применен бонус {bonus_percentage}% к пополнению. Добавлено {bonus_amount} голды.")
+
             #Получаем сообщение для пользователя из настроек по способу пополнения
             deposit_details_message = payment_methods[method_code]["details"].format(amount=amount)
 
             #Добавляем информацию о количестве голды к сообщению
-            message_to_user = f"{deposit_details_message}\n\nЗа {amount} рублей вы получите {gold_amount} голды.\nПришлите скриншот перевода в этот диалог."
+            message_to_user = f"{deposit_details_message}\n\nЗа {amount} рублей вы получите {gold_amount:.2f} голды" #Исправляем: Указываем gold_amount:.2f
+            if bonus_percentage > 0:
+                message_to_user += f" (с учетом бонуса {bonus_percentage}%)"
+            message_to_user += ".\nПришлите скриншот перевода в этот диалог."
 
             bot.send_message(user_id, message_to_user)
 
@@ -728,14 +984,25 @@ def profile(message):
     except Exception as e:
         logging.error(f"Ошибка в profile: {e}\n{traceback.format_exc()}")
 
-@bot.callback_query_handler(func=lambda call: not call.data.startswith("admin_") and not call.data.startswith("approve_deposit_") and not call.data.startswith("decline_deposit_") and not call.data.startswith("deposit_method_") and not call.data.startswith("approve_withdrawal_") and not call.data.startswith("decline_withdrawal_") and not call.data.startswith("admin_withdrawal_"))
+@bot.callback_query_handler(func=lambda call: call.data == "promo")
+def promo_callback(call):
+    """Обработчик для кнопки 'Промокод' в профиле."""
+    try:
+        # Вызываем функцию запроса промокода
+        ask_promocode(call)
+        logging.info(f"Пользователь {call.from_user.id} запросил активацию промокода")
+    except Exception as e:
+        logging.error(f"Ошибка в promo_callback: {e}\n{traceback.format_exc()}")
+
+@bot.callback_query_handler(func=lambda call: not call.data.startswith("admin_"))
 def inline_button_callback(call):
     """Обработчик callback-запросов от inline-кнопок (кроме админских)."""
     try:
         user_id = call.from_user.id
         if call.data == "promo":
-            bot.send_message(user_id, "Здесь будет функционал активации промокода.")
-            logging.info(f"Пользователь {user_id} нажал на кнопку 'Промокод'")
+            # Вызываем функцию запроса промокода
+            ask_promocode(call)
+            logging.info(f"Пользователь {user_id} запросил активацию промокода")
         elif call.data == "ref":
             referral_link = f"https://t.me/{bot.get_me().username}?start={user_id}"
             bot.send_message(user_id, f"Ваша реферальная ссылка: {referral_link}")
@@ -817,56 +1084,12 @@ def support(message):
     except Exception as e:
         logging.error(f"Ошибка в support: {e}\n{traceback.format_exc()}")
 
-#Обработчик для тех кнопок, которые не находятся выше (чтобы не было конфликтов)
-@bot.callback_query_handler(func=lambda call: True)
-def inline_button_callback_default(call):
-    """Дефолтный обработчик callback-запросов."""
-    try:
-        user_id = call.from_user.id
-        if call.data == "promo":
-            bot.send_message(user_id, "Здесь будет функционал активации промокода.")
-            logging.info(f"Пользователь {user_id} нажал на кнопку 'Промокод'")
-        elif call.data == "ref":
-            referral_link = f"https://t.me/{bot.get_me().username}?start={user_id}"
-            bot.send_message(user_id, f"Ваша реферальная ссылка: {referral_link}")
-            logging.info(f"Пользователь {user_id} нажал на кнопку 'Реф. система'")
-        else:
-            bot.answer_callback_query(call.id, "Неизвестная команда")
-            logging.warning(f"Пользователь {user_id} нажал на неизвестную инлайн-кнопку: {call.data}")
-
-        bot.answer_callback_query(call.id)
-
-    except Exception as e:
-        logging.error(f"Ошибка в inline_button_callback_default: {e}\n{traceback.format_exc()}")
-
-def process_decline_reason(message, deposit_id):
-    """Обработчик причины отклонения депозита."""
-    try:
-        user_id = message.from_user.id
-        if not is_admin(user_id):
-            bot.send_message(user_id, "У вас нет прав для доступа к этой функции.")
-            return
-
-        reason = message.text
-        deposit = get_deposit(deposit_id)
-
-        if not deposit:
-            bot.send_message(user_id, "Заявка не найдена.")
-            return
-
-        remove_deposit(deposit_id)
-        bot.send_message(deposit['user_id'], f"Ваша заявка на пополнение была отклонена. Причина: {reason}")
-        bot.send_message(user_id, f"Заявка {deposit_id} отклонена. Указана причина: {reason}")
-        logging.info(f"Администратор {user_id} отклонил заявку {deposit_id}. Причина: {reason}")
-
-    except Exception as e:
-        logging.error(f"Ошибка в process_decline_reason: {e}\n{traceback.format_exc()}")
-
 # --- Запуск бота ---
 if __name__ == '__main__':
     print("Бот запущен...")
     logging.info("Бот запущен")
     try:
+        # Добавляем callback handler для промокодов
         bot.infinity_polling()
     except Exception as e:
         logging.critical(f"Бот остановлен из-за ошибки: {e}\n{traceback.format_exc()}")
