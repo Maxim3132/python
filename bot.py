@@ -184,7 +184,7 @@ def activate_promocode(message):
                 bot.send_message(message.chat.id, "Промокод больше не действителен (достигнут лимит активаций).")
         else:
             bot.send_message(message.chat.id, "Неверный промокод.")
-    
+
 
     except Exception as e:
         logging.error(f"Ошибка в activate_promocode: {e}\n{traceback.format_exc()}")
@@ -244,7 +244,7 @@ def promocode_type_selection(message):
             return
         # Спрашиваем имя промокода.
         bot.send_message(message.chat.id, "Введите имя промокода (например, NEWYEAR2024):",
-                         reply_markup=types.ReplyKeyboardRemove())
+                         reply_markup=types.ReplyKeyboardRemove()) # Удаляем ReplyKeyboardMarkup
         bot.register_next_step_handler(message, promocode_name_input)
         logging.info(f"Администратор {user_id} выбрал тип промокода: {message.text}")
 
@@ -339,6 +339,9 @@ def promocode_confirmation(message):
         del user_states[user_id]  # Удаляем стейт.
         logging.info(f"Администратор {user_id} подтвердил создание промокода")
 
+        # Возвращаем клавиатуру админ-панели
+        admin_panel(message) # Или вызовите функцию, которая отправляет основную клавиатуру админа
+
     except Exception as e:
         logging.error(f"Ошибка в promocode_confirmation: {e}\n{traceback.format_exc()}")
 
@@ -358,6 +361,7 @@ def show_admin_promocodes_menu(message, user_id):
 
         bot.send_message(message.chat.id, "Управление промокодами:", reply_markup=markup)
         logging.info(f"Администратор {user_id} запросил меню управления промокодами")
+
 
     except Exception as e:
         logging.error(f"Ошибка в show_admin_promocodes_menu: {e}\n{traceback.format_exc()}")
@@ -431,7 +435,6 @@ def admin_panel(message):
 def admin_callback_handler(call):
     """Обработчик callback-запросов из админ-панели."""
     try:
-        logging.info(f"admin_callback_handler: call.data = {call.data}")
         user_id = call.from_user.id
         if not is_admin(user_id):
             bot.answer_callback_query(call.id, "У вас нет прав для доступа к этой функции.")
@@ -460,13 +463,29 @@ def admin_callback_handler(call):
             deposit = get_deposit(deposit_id)
             if deposit:
                 user = bot.get_chat(deposit['user_id']) #Получаем информацию о пользователе
+
+                # Рассчитываем количество голды (без учета бонуса)
+                gold_amount = int(deposit['amount'] / GOLD_RATE)
+
+                # Проверяем, есть ли у пользователя бонус к следующему пополнению
+                bonus_message = ""
+                if deposit['user_id'] in user_next_deposit_bonus:
+                    bonus_percentage = user_next_deposit_bonus[deposit['user_id']]
+                    bonus_amount = gold_amount * (bonus_percentage / 100)
+                    total_gold_amount = gold_amount + bonus_amount
+                    bonus_message = f"\nБонус: +{bonus_percentage}% ({bonus_amount:.2f} голды)\nИтого: {total_gold_amount:.2f} голды"
+                else:
+                    total_gold_amount = gold_amount
+                    bonus_message = f"\nИтого: {total_gold_amount:.2f} голды"
+
                 # Показываем информацию о заявке
                 message_text = (
                     f"ID: {deposit['id']}\n"
                     f"Имя: {user.first_name} {user.last_name or ''}\n"  # Используем данные из объекта User
                     f"ID Пользователя: {deposit['user_id']}\n"
                     f"Сумма: {deposit['amount']} $\n"
-                    f"Способ пополнения: {deposit['payment_method']}" #TODO: реализовать сохранение этого в заявке
+                    f"Способ пополнения: {deposit['payment_method']}"
+                    f"{bonus_message}" # Добавляем информацию о бонусе
                 )
                 inline_keyboard = types.InlineKeyboardMarkup()
                 button_approve = types.InlineKeyboardButton(text="Одобрить", callback_data=f"approve_deposit_{deposit_id}")
@@ -536,10 +555,10 @@ def admin_callback_handler(call):
             logging.info(f"Администратор {user_id} запросил функционал рассылки")
 
         elif call.data == "admin_promocodes":
-            user_id = call.from_user.id  # Получаем ID пользователя из callback query
+            user_id = call.from_user.id
             logging.info(f"admin_promocodes: User ID = {user_id}, is_admin = {is_admin(user_id)}")
             logging.info(f"admin_promocodes: promocodes = {promocodes}")
-            if not is_admin(user_id):  # Исправлено: Проверяем, что пользователь *НЕ* админ
+            if not is_admin(user_id):
                 bot.answer_callback_query(call.id, "У вас нет прав для доступа к этой функции.")
                 logging.warning(f"Пользователь {user_id} попытался получить доступ к меню промокодов без прав")
                 return
