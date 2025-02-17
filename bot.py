@@ -359,7 +359,6 @@ def show_admin_promocodes_menu(message, user_id):
         bot.send_message(message.chat.id, "Управление промокодами:", reply_markup=markup)
         logging.info(f"Администратор {user_id} запросил меню управления промокодами")
 
-
     except Exception as e:
         logging.error(f"Ошибка в show_admin_promocodes_menu: {e}\n{traceback.format_exc()}")
 
@@ -432,6 +431,7 @@ def admin_panel(message):
 def admin_callback_handler(call):
     """Обработчик callback-запросов из админ-панели."""
     try:
+        logging.info(f"admin_callback_handler: call.data = {call.data}")
         user_id = call.from_user.id
         if not is_admin(user_id):
             bot.answer_callback_query(call.id, "У вас нет прав для доступа к этой функции.")
@@ -571,7 +571,6 @@ def admin_callback_handler(call):
         elif call.data.startswith("admin_promocode_info_"):
             promocode_name = call.data[20:]  # Извлекаем имя промокода
             logging.info(f"admin_callback_handler: promocode_name = {promocode_name}, call.data = {call.data}")
-            logging.info(f"admin_callback_handler: promocodes = {promocodes}") #  ***НОВЫЙ ЛОГ***
             show_promocode_info(call, promocode_name)
 
         elif call.data == "admin_create_promocode":
