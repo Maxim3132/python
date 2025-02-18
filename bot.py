@@ -31,6 +31,9 @@ GOLD_RATE = 0.65
 
 # --- Данные (имитация базы данных) ---
 user_data = {}
+pending_questions = []  # Список словарей: [{'id': 1, 'user_id': 123, 'username': 'user123', 'question': 'Текст вопроса'}, ...]
+question_id_counter = 1
+user_question_states = {} # {user_id: {'state': 'waiting_question'}, ...}
 
 # --- Способы пополнения (динамические, из базы данных) ---
 payment_methods = {
@@ -103,6 +106,40 @@ def remove_withdrawal(withdrawal_id):
     global pending_withdrawals
     pending_withdrawals = [withdrawal for withdrawal in pending_withdrawals if withdrawal['id'] != withdrawal_id]
     logging.info(f"Вывод с ID {withdrawal_id} удален")
+
+# --- Функции для работы с вопросами ---
+def create_question(user_id, username, question):
+    global question_id_counter
+    question_id = question_id_counter
+    pending_questions.append({
+        'id': question_id,
+        'user_id': user_id,
+        'username': username,
+        'question': question
+    })
+    question_id_counter += 1
+    logging.info(f"Создан вопрос #{question_id} от пользователя {user_id}")
+    return question_id
+
+def get_question(question_id):
+    for question in pending_questions:
+        if question['id'] == question_id:
+            return question
+    logging.warning(f"Вопрос с ID {question_id} не найден")
+    return None
+
+def remove_question(question_id):
+    global pending_questions
+    pending_questions = [question for question in pending_questions if question['id'] != question_id]
+    logging.info(f"Вопрос с ID {question_id} удален")
+
+def has_pending_question(user_id):
+    for question in pending_questions:
+        if question['user_id'] == user_id:
+            logging.info(f"У пользователя {user_id} есть ожидающий вопрос")
+            return True
+    logging.info(f"У пользователя {user_id} нет ожидающих вопросов")
+    return False
 
 # --- Функции-обработчики ---
 def get_user_data(user_id):
@@ -302,19 +339,6 @@ def promocode_value_input(message):
     except Exception as e:
         logging.error(f"Ошибка в promocode_value_input: {e}\n{traceback.format_exc()}")
 
-        # Подтверждение
-        name = user_states[user_id]["name"]
-        type = user_states[user_id]["type"]
-        value = user_states[user_id]["value"]
-        limit = user_states[user_id]["limit"]
-        bot.send_message(message.chat.id,
-                         f"Подтвердите данные:\nИмя: {name}\nТип: {type}\nЗначение: {value}\nЛимит: {limit}\nВсе верно? (да/нет)")
-        bot.register_next_step_handler(message, promocode_confirmation)
-        logging.info(f"Администратор {user_id} ввел значение промокода: {message.text}")
-
-    except Exception as e:
-        logging.error(f"Ошибка в promocode_value_input: {e}\n{traceback.format_exc()}")
-
 def promocode_confirmation(message):
     """Обработчик подтверждения создания промокода."""
     try:
@@ -362,9 +386,42 @@ def show_admin_promocodes_menu(message, user_id):
         bot.send_message(message.chat.id, "Управление промокодами:", reply_markup=markup)
         logging.info(f"Администратор {user_id} запросил меню управления промокодами")
 
-
     except Exception as e:
         logging.error(f"Ошибка в show_admin_promocodes_menu: {e}\n{traceback.format_exc()}")
+
+# --- Функции для работы с вопросами ---
+def create_question(user_id, username, question):
+    global question_id_counter
+    question_id = question_id_counter
+    pending_questions.append({
+        'id': question_id,
+        'user_id': user_id,
+        'username': username,
+        'question': question
+    })
+    question_id_counter += 1
+    logging.info(f"Создан вопрос #{question_id} от пользователя {user_id}")
+    return question_id
+
+def get_question(question_id):
+    for question in pending_questions:
+        if question['id'] == question_id:
+            return question
+    logging.warning(f"Вопрос с ID {question_id} не найден")
+    return None
+
+def remove_question(question_id):
+    global pending_questions
+    pending_questions = [question for question in pending_questions if question['id'] != question_id]
+    logging.info(f"Вопрос с ID {question_id} удален")
+
+def has_pending_question(user_id):
+    for question in pending_questions:
+        if question['user_id'] == user_id:
+            logging.info(f"У пользователя {user_id} есть ожидающий вопрос")
+            return True
+    logging.info(f"У пользователя {user_id} нет ожидающих вопросов")
+    return False
 
 # --- Хендлеры ---
 
@@ -383,11 +440,12 @@ def start(message):
         button_exchange_rate = types.KeyboardButton('Курс')
         button_reviews = types.KeyboardButton('Отзывы')
         button_support = types.KeyboardButton('Тех. поддержка')
+        button_questions = types.KeyboardButton('Вопросы')
 
         keyboard.add(button_profile, button_withdraw)
         keyboard.add(button_deposit, button_calculator)
         keyboard.add(button_exchange_rate, button_reviews)
-        keyboard.add(button_support)
+        keyboard.add(button_support, button_questions)
 
         if is_admin(user_id):
             button_admin = types.KeyboardButton('Админ панель')
@@ -578,8 +636,8 @@ def admin_callback_handler(call):
             logging.info(f"Администратор {user_id} запросил функционал управления реферальной системой")
 
         elif call.data == "admin_questions":
-            # TODO: Реализовать логику просмотра вопросов
-            bot.send_message(user_id, "Здесь будет список вопросов.")
+            # Показать список вопросов
+            show_pending_questions(call.message)
             logging.info(f"Администратор {user_id} запросил список вопросов")
 
         elif call.data == "admin_settings":
@@ -594,6 +652,33 @@ def admin_callback_handler(call):
 
         elif call.data == "admin_create_promocode":
              create_promocode(call)
+
+        elif call.data.startswith("answer_question_") or call.data.startswith("close_question_"):
+            try:
+                question_id = int(call.data.split("_")[-1])
+                question = get_question(question_id)
+
+                if not question:
+                    bot.send_message(user_id, "Вопрос не найден.")
+                    logging.warning(f"Администратор {user_id} попытался обработать несуществующий вопрос {question_id}")
+                    return
+
+                if call.data.startswith("answer_question_"):
+                    # Запрашиваем ответ от админа
+                    msg = bot.send_message(call.message.chat.id, "Введите ответ:")
+                    bot.register_next_step_handler(msg, process_answer, question_id)
+
+                elif call.data.startswith("close_question_"):
+                    # Закрываем вопрос
+                    bot.send_message(question['user_id'], "Администратор закрыл ваш вопрос.")
+                    remove_question(question_id)
+                    bot.send_message(call.message.chat.id, f"Вопрос #{question_id} закрыт.")
+                    logging.info(f"Администратор {user_id} закрыл вопрос #{question_id}")
+
+                bot.answer_callback_query(call.id)
+
+            except Exception as e:
+                logging.error(f"Ошибка в handle_question_actions: {e}\n{traceback.format_exc()}")
 
         else:
             bot.answer_callback_query(call.id, "Неизвестная команда")
@@ -883,7 +968,6 @@ def withdraw(message):
     except Exception as e:
         logging.error(f"Ошибка в withdraw: {e}\n{traceback.format_exc()}")
 
-
 def has_pending_withdrawal(user_id):
     """Проверяет, есть ли у пользователя неподтвержденная заявка на вывод."""
     try:
@@ -1012,102 +1096,148 @@ def promo_callback(call):
     except Exception as e:
         logging.error(f"Ошибка в promo_callback: {e}\n{traceback.format_exc()}")
 
-@bot.callback_query_handler(func=lambda call: not call.data.startswith("admin_"))
-def inline_button_callback(call):
-    """Обработчик callback-запросов от inline-кнопок (кроме админских)."""
-    try:
-        user_id = call.from_user.id
-        if call.data == "promo":
-            # Вызываем функцию запроса промокода
-            ask_promocode(call)
-            logging.info(f"Пользователь {user_id} запросил активацию промокода")
-        elif call.data == "ref":
-            referral_link = f"https://t.me/{bot.get_me().username}?start={user_id}"
-            bot.send_message(user_id, f"Ваша реферальная ссылка: {referral_link}")
-            logging.info(f"Пользователь {user_id} нажал на кнопку 'Реф. система'")
-        elif call.data.startswith("calc_"):  # Обрабатываем callback'и калькулятора
-            calculation_type = call.data[5:]  # Извлекаем тип расчета (gold_to_rub или rub_to_gold)
-            msg = bot.send_message(user_id, "Введите число (не меньше 1):")
-            bot.register_next_step_handler(msg, process_calculator_input, calculation_type)
-            logging.info(f"Пользователь {user_id} выбрал расчет {calculation_type}")
-        else:
-            bot.answer_callback_query(call.id, "Неизвестная команда")
-            logging.warning(f"Пользователь {user_id} нажал на неизвестную инлайн-кнопку: {call.data}")
-
-        bot.answer_callback_query(call.id)
-
-    except Exception as e:
-        logging.error(f"Ошибка в inline_button_callback: {e}\n{traceback.format_exc()}")
-
-def process_calculator_input(message, calculation_type):
-    """Обработчик ввода числа для калькулятора."""
-    try:
-        user_id = message.from_user.id
-        try:
-            value = float(message.text)
-            if value < 1:
-                bot.send_message(user_id, "Введите число не меньше 1.")
-                return
-
-            if calculation_type == "gold_to_rub":
-                result = value * GOLD_RATE
-                bot.send_message(user_id, f"{value} голды = {result:.2f} рублей")
-                logging.info(f"Пользователь {user_id} расчитал {value} голды в рубли")
-            elif calculation_type == "rub_to_gold":
-                result = value / GOLD_RATE
-                bot.send_message(user_id, f"{value} рублей = {result:.2f} голды")
-                logging.info(f"Пользователь {user_id} расчитал {value} рублей в голду")
-            else:
-                bot.send_message(user_id, "Неизвестный тип расчета.")
-                logging.warning(f"Пользователь {user_id} запросил неизвестный тип расчета: {calculation_type}")
-
-        except ValueError:
-            bot.send_message(user_id, "Неверный формат числа. Введите число.")
-            logging.warning(f"Пользователь {user_id} ввел неверный формат числа для калькулятора: {message.text}")
-
-    except Exception as e:
-        logging.error(f"Ошибка в process_calculator_input: {e}\n{traceback.format_exc()}")
-
-@bot.message_handler(func=lambda message: message.text == 'Курс')
-def exchange_rate(message):
-    """Обработчик кнопки 'Курс'."""
-    try:
-        user_id = message.from_user.id
-        rate = 75.0  # Доллар к рублю (пример)
-        bot.send_message(user_id, f"Курс валют:\n1 1  = {rate} RUB (пример)")
-        logging.info(f"Пользователь {user_id} запросил курс валют")
-
-    except Exception as e:
-        logging.error(f"Ошибка в exchange_rate: {e}\n{traceback.format_exc()}")
-
-@bot.message_handler(func=lambda message: message.text == 'Отзывы')
-def reviews(message):
-    """Обработчик кнопки 'Отзывы'."""
-    try:
-        user_id = message.from_user.id
-        bot.send_message(user_id, "Пока что здесь нет функционала для отзывов.  Можете оставить свои пожелания разработчику.")
-        logging.info(f"Пользователь {user_id} запросил отзывы")
-
-    except Exception as e:
-        logging.error(f"Ошибка в reviews: {e}\n{traceback.format_exc()}")
-
 @bot.message_handler(func=lambda message: message.text == 'Тех. поддержка')
 def support(message):
     """Обработчик кнопки 'Тех. поддержка'."""
     try:
         user_id = message.from_user.id
-        bot.send_message(user_id, "Для связи с техподдержкой напишите на example@mail.com (пример)")
+        username = message.from_user.username # Добавляем получение username
+
+        if has_pending_question(user_id):
+            bot.send_message(user_id, "У вас уже есть ожидающий ответа вопрос. Пожалуйста, дождитесь ответа техподдержки.")
+            return
+
+        user_question_states[user_id] = {'state': 'waiting_question'}
+        msg = bot.send_message(user_id, "Опишите вашу проблему:")
+        bot.register_next_step_handler(msg, process_question, username)  # Передаем username
+
         logging.info(f"Пользователь {user_id} запросил техподдержку")
 
     except Exception as e:
         logging.error(f"Ошибка в support: {e}\n{traceback.format_exc()}")
 
-# --- Запуск бота ---
-if __name__ == '__main__':
-    print("Бот запущен...")
-    logging.info("Бот запущен")
+@bot.message_handler(func=lambda message: message.text == 'Вопросы')
+def questions(message):
+    """Обработчик кнопки 'Вопросы'."""
     try:
-        # Добавляем callback handler для промокодов
-        bot.infinity_polling()
+        user_id = message.from_user.id
+
+        if is_admin(user_id):
+            # Если админ, показываем список вопросов
+            show_pending_questions(message)
+        else:
+            bot.send_message(user_id, "У вас нет прав для просмотра этой информации.")
+            logging.warning(f"Пользователь {user_id} попытался получить доступ к списку вопросов без прав")
+
+        logging.info(f"Пользователь {user_id} нажал кнопку 'Вопросы'")
+
     except Exception as e:
-        logging.critical(f"Бот остановлен из-за ошибки: {e}\n{traceback.format_exc()}")
+        logging.error(f"Ошибка в questions: {e}\n{traceback.format_exc()}")
+
+def process_question(message, username):
+    """Обработчик ввода вопроса от пользователя."""
+    try:
+        user_id = message.from_user.id
+        question = message.text
+
+        # Создаем вопрос
+        question_id = create_question(user_id, username, question) # Передаем username
+
+        bot.send_message(user_id, f"Ваш вопрос #{question_id} отправлен в техподдержку. Ожидайте ответа.")
+        del user_question_states[user_id]
+        logging.info(f"Пользователь {user_id} задал вопрос: {question}")
+
+    except Exception as e:
+        logging.error(f"Ошибка в process_question: {e}\n{traceback.format_exc()}")
+
+def show_pending_questions(message):
+    """Отображает список ожидающих вопросов для админа."""
+    try:
+        user_id = message.chat.id # Для админа message.chat.id
+        if not pending_questions:
+            bot.send_message(user_id, "Нет ожидающих вопросов.")
+            logging.info(f"Администратор {user_id} запросил список вопросов. Список пуст.")
+            return
+
+        inline_keyboard = types.InlineKeyboardMarkup()
+        for question in pending_questions:
+            button_text = f"{question['username']} (ID: {question['id']})" # Используем username
+            button = types.InlineKeyboardButton(text=button_text, callback_data=f"admin_question_{question['id']}")
+            inline_keyboard.add(button)
+
+        bot.send_message(user_id, "Выберите вопрос:", reply_markup=inline_keyboard)
+        logging.info(f"Администратору {user_id} отправлен список из {len(pending_questions)} вопросов")
+
+    except Exception as e:
+        logging.error(f"Ошибка в show_pending_questions: {e}\n{traceback.format_exc()}")
+
+def show_question_details(message, question_id):
+    """Отображает детали вопроса для админа и кнопки управления."""
+    try:
+        user_id = message.chat.id # Для админа message.chat.id
+        question = get_question(question_id)
+
+        if not question:
+            bot.send_message(user_id, "Вопрос не найден.")
+            logging.warning(f"Администратор {user_id} запросил несуществующий вопрос {question_id}")
+            return
+
+        message_text = (
+            f"Вопрос от пользователя:\n"
+            f"Имя: {question['username']}\n" # Используем username
+            f"ID: {question['user_id']}\n"
+            f"Вопрос: {question['question']}"
+        )
+
+        inline_keyboard = types.InlineKeyboardMarkup()
+        button_answer = types.InlineKeyboardButton(text="Ответить", callback_data=f"answer_question_{question_id}")
+        button_close = types.InlineKeyboardButton(text="Закрыть", callback_data=f"close_question_{question_id}")
+        inline_keyboard.add(button_answer, button_close)
+
+        bot.send_message(user_id, message_text, reply_markup=inline_keyboard)
+        logging.info(f"Администратору {user_id} показан вопрос #{question_id}")
+
+    except Exception as e:
+        logging.error(f"Ошибка в show_question_details: {e}\n{traceback.format_exc()}")
+
+def process_answer(message, question_id):
+    """Обработчик ответа админа на вопрос."""
+    try:
+        user_id = message.from_user.id
+        if not is_admin(user_id):
+            bot.send_message(user_id, "У вас нет прав для доступа к этой функции.")
+            return
+
+        answer = message.text
+        question = get_question(question_id)
+
+        if not question:
+            bot.send_message(message.chat.id, "Вопрос не найден.")
+            return
+
+        bot.send_message(question['user_id'], f"Администратор ответил на ваш вопрос.\nОтвет: {answer}")
+        remove_question(question_id)
+        bot.send_message(message.chat.id, f"Ответ отправлен пользователю. Вопрос #{question_id} закрыт.")
+        logging.info(f"Администратор {user_id} ответил на вопрос #{question_id}: {answer}")
+
+    except Exception as e:
+        logging.error(f"Ошибка в process_answer: {e}\n{traceback.format_exc()}")
+
+@bot.infinity_polling()
+def run_bot():
+    try:
+        bot.polling(none_stop=True)
+    except Exception as e:
+        logging.error(f"Бот упал с ошибкой: {e}")
+        traceback.print_exc()
+        # Попытка перезапустить бот после ошибки
+        time.sleep(5)
+        run_bot()
+
+if __name__ == "__main__":
+    try:
+        run_bot()
+    except KeyboardInterrupt:
+        print("Бот остановлен вручную.")
+    except Exception as e:
+        print(f"Критическая ошибка при запуске бота: {e}")
