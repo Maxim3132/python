@@ -1,0 +1,314 @@
+/* CaseFire Gaming UI Style */
+:root {
+  /* Основные цвета */
+  --fire-red: #FF2D2D;
+  --fire-orange: #FF7A2D;
+  --fire-yellow: #FFD12D;
+  --fire-blue: #2D7AFF;
+  --fire-dark: #0A0A14;
+  --fire-darker: #05050A;
+  --fire-light: #F0F0F5;
+  
+  /* Дополнительные цвета */
+  --neon-pink: #FF2DFF;
+  --neon-blue: #2DFFFF;
+  --neon-green: #2DFF7A;
+  
+  /* Градиенты */
+  --fire-gradient: linear-gradient(135deg, var(--fire-red), var(--fire-orange));
+  --neon-gradient: linear-gradient(135deg, var(--neon-pink), var(--neon-blue));
+  
+  /* Тени */
+  --glow-red: 0 0 10px rgba(255, 45, 45, 0.7);
+  --glow-orange: 0 0 10px rgba(255, 122, 45, 0.7);
+  --glow-blue: 0 0 10px rgba(45, 122, 255, 0.7);
+  --glow-text: 0 0 5px #FFF, 0 0 10px #FFF;
+}
+
+/* Базовые стили */
+body {
+  background: var(--fire-dark);
+  color: var(--fire-light);
+  font-family: 'Rajdhani', 'Arial Narrow', sans-serif;
+  overflow-x: hidden;
+  text-shadow: var(--glow-text);
+}
+
+/* Игровые кнопки */
+.game-btn {
+  display: inline-block;
+  padding: 12px 28px;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  text-shadow: none;
+}
+
+.game-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: 0.5s;
+}
+
+.game-btn:hover::before {
+  left: 100%;
+}
+
+.btn-primary {
+  background: var(--fire-gradient);
+  color: white;
+  box-shadow: var(--glow-red);
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(255, 45, 45, 0.8);
+}
+
+.btn-secondary {
+  background: var(--neon-gradient);
+  color: var(--fire-dark);
+  box-shadow: var(--glow-blue);
+}
+
+/* Карточки кейсов */
+.case-card {
+  background: rgba(10, 10, 20, 0.7);
+  border-radius: 12px;
+  border: 2px solid var(--fire-orange);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+  position: relative;
+}
+
+.case-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 10px;
+  border: 1px solid var(--fire-yellow);
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.case-card:hover {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 15px 30px rgba(255, 45, 45, 0.4);
+  border-color: var(--fire-red);
+}
+
+.case-image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-bottom: 2px solid var(--fire-orange);
+}
+
+.case-price {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0,0,0,0.8);
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-weight: 700;
+  color: var(--fire-yellow);
+  box-shadow: var(--glow-orange);
+}
+
+/* Заголовки */
+.game-title {
+  font-family: 'Bauhaus 93', 'Arial Black', sans-serif;
+  font-size: 3rem;
+  background: linear-gradient(to right, var(--fire-red), var(--fire-yellow));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  letter-spacing: 3px;
+}
+
+.section-title {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 30px;
+  font-size: 2rem;
+  color: var(--fire-light);
+}
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--fire-gradient);
+  border-radius: 3px;
+}
+
+/* Навигация */
+.game-nav {
+  display: flex;
+  gap: 15px;
+  background: rgba(5, 5, 10, 0.8);
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid var(--fire-blue);
+  box-shadow: var(--glow-blue);
+}
+
+.nav-link {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 700;
+  color: var(--fire-light);
+  text-decoration: none;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.nav-link::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background: var(--fire-red);
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover::before {
+  width: 70%;
+}
+
+.nav-link.active {
+  background: rgba(255, 45, 45, 0.2);
+  color: var(--fire-yellow);
+}
+
+/* Анимации */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes float {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0); }
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Эффекты неона */
+.neon-text {
+  text-shadow: 0 0 5px #FFF, 0 0 10px #FFF, 0 0 15px var(--neon-blue), 0 0 20px var(--neon-pink);
+}
+
+.neon-border {
+  box-shadow: 0 0 10px var(--neon-blue), 0 0 20px var(--neon-pink) inset;
+}
+
+/* Формы */
+.game-input {
+  background: rgba(10, 10, 20, 0.7);
+  border: 2px solid var(--fire-blue);
+  border-radius: 8px;
+  padding: 12px 20px;
+  color: white;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  box-shadow: var(--glow-blue);
+}
+
+.game-input:focus {
+  outline: none;
+  border-color: var(--fire-red);
+  box-shadow: var(--glow-red);
+}
+
+/* Баланс */
+.balance {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 20px;
+  background: rgba(255, 45, 45, 0.2);
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--fire-yellow);
+}
+
+.balance-icon {
+  margin-right: 8px;
+  color: var(--fire-red);
+  font-size: 1.5rem;
+}
+
+/* Модальные окна */
+.game-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.modal-content {
+  background: var(--fire-darker);
+  border-radius: 15px;
+  border: 2px solid var(--fire-orange);
+  padding: 30px;
+  width: 90%;
+  max-width: 500px;
+  position: relative;
+  box-shadow: 0 0 30px rgba(255, 45, 45, 0.5);
+}
+
+.modal-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  font-size: 24px;
+  color: var(--fire-light);
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.modal-close:hover {
+  color: var(--fire-red);
+}
