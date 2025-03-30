@@ -1,0 +1,321 @@
+/* CaseFire Design System v2.0 */
+
+/* ========== БАЗОВЫЕ НАСТРОЙКИ ========== */
+:root {
+    /* Цветовая палитра */
+    --fire-primary: #FF2D00;
+    --fire-secondary: #FF9500;
+    --fire-accent: #FFCC00;
+    --fire-dark: #0F0F1A;
+    --fire-darker: #050510;
+    --fire-light: #F0F0FF;
+    
+    /* Градиенты */
+    --fire-gradient: linear-gradient(135deg, var(--fire-primary), var(--fire-secondary));
+    --fire-gradient-accent: linear-gradient(135deg, var(--fire-secondary), var(--fire-accent));
+    
+    /* Тени */
+    --glow-red: 0 0 15px rgba(255, 45, 0, 0.7);
+    --glow-orange: 0 0 15px rgba(255, 149, 0, 0.7);
+    --glow-yellow: 0 0 15px rgba(255, 204, 0, 0.7);
+    
+    /* Шрифты */
+    --font-heading: 'Press Start 2P', cursive;
+    --font-main: 'Montserrat', sans-serif;
+}
+
+/* ========== ОБЩИЕ СТИЛИ ========== */
+body {
+    background-color: var(--fire-dark);
+    color: var(--fire-light);
+    font-family: var(--font-main);
+    margin: 0;
+    overflow-x: hidden;
+    line-height: 1.6;
+}
+
+/* ========== КОМПОНЕНТЫ ========== */
+
+/* Шапка */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
+    background: rgba(15, 15, 26, 0.9);
+    border-bottom: 2px solid var(--fire-primary);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    font-family: var(--font-heading);
+    font-size: 24px;
+    letter-spacing: 2px;
+}
+
+.fire-icon {
+    color: var(--fire-primary);
+    margin-right: 10px;
+    font-size: 28px;
+    filter: drop-shadow(var(--glow-red));
+}
+
+/* Навигация */
+.nav {
+    display: flex;
+    gap: 30px;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--fire-light);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 10px 15px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.nav-link.active {
+    background: rgba(255, 45, 0, 0.2);
+    color: var(--fire-accent);
+    text-shadow: 0 0 10px var(--fire-accent);
+}
+
+.nav-icon {
+    font-size: 20px;
+}
+
+/* Баланс */
+.balance {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 45, 0, 0.15);
+    padding: 8px 20px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 18px;
+    border: 1px solid var(--fire-primary);
+    box-shadow: var(--glow-red);
+}
+
+.balance-amount {
+    margin-right: 5px;
+}
+
+/* Кнопки */
+.cta-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 30px;
+    background: var(--fire-gradient);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font-heading);
+    font-size: 14px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+}
+
+.btn-glow {
+    box-shadow: var(--glow-orange);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-glow::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        to bottom right,
+        rgba(255,255,255,0) 45%,
+        rgba(255,255,255,0.3) 50%,
+        rgba(255,255,255,0) 55%
+    );
+    transform: rotate(30deg);
+    animation: shine 3s infinite;
+}
+
+@keyframes shine {
+    0% { transform: translateX(-100%) rotate(30deg); }
+    100% { transform: translateX(100%) rotate(30deg); }
+}
+
+/* Герой-секция */
+.hero {
+    text-align: center;
+    padding: 80px 20px;
+    background: radial-gradient(circle at center, rgba(255,45,0,0.1) 0%, transparent 70%);
+}
+
+.hero-title {
+    font-family: var(--font-heading);
+    font-size: 42px;
+    margin-bottom: 30px;
+    line-height: 1.3;
+}
+
+.title-gradient {
+    background: var(--fire-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: block;
+}
+
+.title-outline {
+    color: var(--fire-light);
+    text-shadow: 
+        2px 2px 0 var(--fire-primary),
+        -2px -2px 0 var(--fire-primary),
+        2px -2px 0 var(--fire-primary),
+        -2px 2px 0 var(--fire-primary);
+}
+
+/* Секция кейсов */
+.cases {
+    padding: 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.section-title {
+    font-family: var(--font-heading);
+    font-size: 24px;
+    color: var(--fire-accent);
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.title-decor {
+    color: var(--fire-primary);
+}
+
+.cases-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 30px;
+}
+
+/* Карточки кейсов */
+.case-card {
+    background: var(--fire-darker);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid var(--fire-primary);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.case-card:hover {
+    transform: translateY(-10px);
+    box-shadow: var(--glow-red);
+}
+
+.case-card.featured {
+    border-color: var(--fire-accent);
+    box-shadow: var(--glow-yellow);
+}
+
+.case-badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: var(--fire-accent);
+    color: var(--fire-dark);
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 12px;
+    z-index: 2;
+}
+
+.case-image {
+    height: 200px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.case-info {
+    padding: 20px;
+    text-align: center;
+}
+
+.case-name {
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.case-price {
+    color: var(--fire-accent);
+    font-weight: 700;
+    font-size: 20px;
+    margin-bottom: 15px;
+}
+
+.case-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--fire-gradient);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.case-btn:hover {
+    background: var(--fire-gradient-accent);
+}
+
+/* Анимации */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        padding: 15px;
+    }
+    
+    .nav {
+        margin: 15px 0;
+    }
+    
+    .hero-title {
+        font-size: 28px;
+    }
+    
+    .cases {
+        padding: 20px;
+    }
+}
