@@ -1,0 +1,215 @@
+/* CaseFire Admin Design System */
+
+/* ========== Базовые стили админки ========== */
+.admin-container {
+  --admin-sidebar-width: 250px;
+  --admin-header-height: 60px;
+  
+  display: flex;
+  min-height: 100vh;
+  background: var(--fire-dark);
+}
+
+.admin-sidebar {
+  width: var(--admin-sidebar-width);
+  background: var(--fire-darker);
+  padding: 1.5rem 0;
+  position: fixed;
+  height: 100vh;
+}
+
+.admin-logo {
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  margin-bottom: 1.5rem;
+}
+
+.admin-logo-icon {
+  color: var(--fire-primary);
+  margin-right: 0.75rem;
+}
+
+.admin-menu {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-menu-item {
+  padding: 0.75rem 1.5rem;
+  color: var(--fire-light);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  transition: all var(--fire-transition-fast) ease;
+}
+
+.admin-menu-item:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.admin-menu-item.active {
+  background: rgba(255,71,87,0.2);
+  border-left: 3px solid var(--fire-primary);
+}
+
+.admin-menu-icon {
+  margin-right: 0.75rem;
+  width: 20px;
+  text-align: center;
+}
+
+.admin-content {
+  flex: 1;
+  margin-left: var(--admin-sidebar-width);
+  padding: 2rem;
+}
+
+/* ========== Таблицы ========== */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+}
+
+.data-table th,
+.data-table td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.data-table th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  color: var(--fire-accent);
+}
+
+.data-table tr:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+/* ========== Формы в админке ========== */
+.admin-form .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.admin-form label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.admin-form input,
+.admin-form select,
+.admin-form textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: var(--fire-radius-md);
+  color: var(--fire-light);
+  transition: all var(--fire-transition-fast) ease;
+}
+
+.admin-form input:focus,
+.admin-form select:focus,
+.admin-form textarea:focus {
+  outline: none;
+  border-color: var(--fire-primary);
+  box-shadow: 0 0 0 3px rgba(255,71,87,0.2);
+}
+
+/* ========== Кнопки админки ========== */
+.admin-btn {
+  padding: 0.5rem 1rem;
+  border-radius: var(--fire-radius-sm);
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--fire-transition-fast) ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-btn-primary {
+  background: var(--fire-primary);
+  color: white;
+}
+
+.admin-btn-success {
+  background: var(--fire-success);
+  color: white;
+}
+
+.admin-btn-danger {
+  background: var(--fire-danger);
+  color: white;
+}
+
+.admin-btn-warning {
+  background: var(--fire-warning);
+  color: white;
+}
+
+/* ========== Карточки в админке ========== */
+.admin-card {
+  background: var(--fire-darker);
+  border-radius: var(--fire-radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--fire-shadow-sm);
+}
+
+.admin-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.admin-card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* ========== Утилиты ========== */
+.text-muted {
+  color: rgba(255,255,255,0.6);
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 2rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-primary {
+  background: rgba(255,71,87,0.2);
+  color: var(--fire-primary);
+}
+
+.badge-success {
+  background: rgba(46,213,115,0.2);
+  color: var(--fire-success);
+}
+
+.badge-warning {
+  background: rgba(243,156,18,0.2);
+  color: var(--fire-warning);
+}
+
+.badge-danger {
+  background: rgba(255,71,87,0.2);
+  color: var(--fire-danger);
+}
